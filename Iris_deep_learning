@@ -1,0 +1,32 @@
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from sklearn.model_selection import train_test_split
+df=pd.read_csv("/content/Iris.csv")
+df.head(10)
+df["Species"]=df["Species"].map({"Iris-setosa":0,"Iris-versicolor":1,"Iris-virginica":2})
+df.head(5)
+X_train,X_test,y_train,y_test=train_test_split(df[["SepalLengthCm","SepalWidthCm","PetalLengthCm","PetalWidthCm"]],df.Species,test_size=0.2,random_state=42)
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+model = keras.Sequential([
+    keras.layers.Dense(16, activation="relu", input_shape=(4,)),
+    keras.layers.Dense(8, activation="relu"),
+    keras.layers.Dense(3, activation="softmax")  
+])
+model.compile(
+    optimizer="adam",
+    loss="sparse_categorical_crossentropy",
+    metrics=["accuracy"]
+)
+model.evaluate(X_test,y_test)
+import pandas as pd
+import numpy as np
+input_df = pd.DataFrame([[5.9, 3, 5.1, 1.8]], columns=["SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm"])
+input_scaled = scaler.transform(input_df)
+prediction = model.predict(input_scaled)
+predicted_class = np.argmax(prediction) 
+species_map = {0: "Iris-setosa", 1: "Iris-versicolor", 2: "Iris-virginica"}
+print("Predicted species:", species_map[predicted_class])
