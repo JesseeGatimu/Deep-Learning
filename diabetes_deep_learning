@@ -1,0 +1,23 @@
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras 
+from sklearn.model_selection import train_test_split
+df=pd.read_csv("/content/diabetes.csv")
+df.head(10)
+X_train,X_test,y_train,y_test=train_test_split(df[["Pregnancies","Glucose","BloodPressure","SkinThickness","Insulin","BMI","DiabetesPedigreeFunction","Age"]],df.Outcome,test_size=0.2,random_state=42)
+from sklearn.preprocessing import StandardScaler
+scaler=StandardScaler()
+X_train=scaler.fit_transform(X_train)
+X_test=scaler.transform(X_test)
+model=keras.Sequential([
+    keras.layers.Dense(24,activation="relu",input_shape=(8,)),
+    keras.layers.Dense(16,activation="relu",input_shape=(8,)),
+    keras.layers.Dense(8,activation="softmax",input_shape=(8,))
+])
+model.compile(
+    optimizer="adam",
+    loss="sparse_categorical_crossentropy",
+    metrics=["accuracy"]
+)
+model.fit(X_train,y_train,epochs=800)
+model.evaluate(X_test,y_test)
