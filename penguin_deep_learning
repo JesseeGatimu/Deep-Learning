@@ -1,0 +1,34 @@
+import pandas as pd
+import tensorflow as tf 
+from tensorflow import keras 
+from sklearn.model_selection import train_test_split
+df=pd.read_csv("/content/penguins_binary_classification.csv")
+df.head(10)
+df["island"]=df["island"].map({"Torgersen":0,"Biscoe":1,"Dream":2})
+df["species"]=df["species"].map({"Adelie":0,"Gentoo":1})
+X_train,X_test,y_train,y_test=train_test_split(df[["island","bill_length_mm","bill_depth_mm","flipper_length_mm","body_mass_g","year"]],df.species,test_size=0.2,random_state=42)
+from sklearn.preprocessing import StandardScaler
+scaler=StandardScaler()
+X_train=scaler.fit_transform(X_train)
+X_test=scaler.transform(X_test)
+model=keras.Sequential([
+    keras.layers.Dense(16,activation="relu",input_shape=(6,)),
+    keras.layers.Dense(8,activation="relu",input_shape=(6,)),
+    keras.layers.Dense(3,activation="softmax",input_shape=(6,))
+])
+model.compile(
+    optimizer="adam",
+    loss="sparse_categorical_crossentropy",
+    metrics=["accuracy"]
+)
+model.fit(X_train,y_train,epochs=100)
+model.evaluate(X_test,y_test)
+import pandas as pd
+import numpy as np
+test_input=pd.DataFrame([[0,39.1,18.7,181,3750,2007]],columns=["island","bill_length_mm","bill_depth_mm","flipper_length_mm","body_mass_g","year"])
+test_input_scaled=scaler.transform(test_input)
+predicted_species=model.predict(test_input_scaled)
+predicted_penguin_species=np.argmax(predicted_species)
+species_map={0:"Adelie",1:"Gentoo"}
+print("Penguin species :",species_map[predicted_penguin_species])
+
