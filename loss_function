@@ -1,0 +1,38 @@
+import numpy as np
+y_true=np.array([1,2,3,4,5])
+y_predict=np.array([0.5,1.5,2.5,3.5,4.5])
+def mean_absolute_error(y_true,y_predict):
+  total_error=0
+  for yt,yp in zip(y_true,y_predict):
+    total_error+=abs(yt-yp)
+  print("Total Error ::",total_error)
+  mae=total_error/len(y_true)
+  return mae
+mean_absolute_error(y_true,y_predict)
+#another way to implement the above 
+np.mean(np.abs(y_true-y_predict))
+
+#mean squared error
+def mean_squared_error(y_true,y_predicted):
+  total_error=0
+  for yt,yp in zip(y_true,y_predict):
+    total_error+=(yt-yp)**2
+  print("Total Error ::",total_error)
+  msq=total_error/len(y_true)
+  return msq
+mean_squared_error(y_true,y_predict)
+#another way to implement the above
+np.mean(np.square(y_true-y_predict))
+
+#log loss
+def log_loss_function(y_true,y_predicted):
+ epsilon=1e-15
+ epsilon
+ #log loss
+ y_predicted_ne=[max(i,epsilon)for i in y_predicted]
+ y_predicted_ne
+ y_predicted_new=[min(i,1-epsilon)for i in y_predicted_ne]
+ y_predicted_new
+ y_predicted_new=np.array(y_predicted_new)
+ return -np.mean(y_true*np.log(y_predicted_new)+(1-y_true)*np.log(1-y_predicted_new))
+log_loss_function(y_true,y_predicted)
