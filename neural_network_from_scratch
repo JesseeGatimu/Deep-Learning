@@ -1,0 +1,92 @@
+import pandas as pd
+df=pd.read_csv("/content/Iris.csv")
+df.head(5)
+#we do label encoder
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import MinMaxScaler
+df=df.drop(columns=["Id"])
+encoder=LabelEncoder()
+df["Species"]=encoder.fit_transform(df["Species"])
+#we do the scaling of our data such that we have only values ranging from 0 to 1
+scaler=MinMaxScaler()
+#we scale all our columns except the species column in the code above 
+df.iloc[:,:-1]=scaler.fit_transform(df.iloc[:,:-1])
+df.head(10)
+from sklearn.model_selection import train_test_split
+X=df.iloc[:,:-1].values
+y=df.iloc[:,-1].values
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=42)
+X_train.shape
+y_train.shape
+#we create a neural network from scratch such that we have 4 input nueron for our features
+#we have 3 output neurons for our three output classes of species 
+import numpy as np
+input_size=4
+output_size=3
+np.random.seed(42)
+#since we are building from scratch we have to initialize our weights and biases randomly
+weights=np.random.randn(input_size,output_size)*0.001
+#our biases starts at zero 
+biases=np.zeros((1,output_size))
+weights,biases
+#we will use softmax activation function
+def softmax(z):
+  exp_z=np.exp(z-np.max(z,axis=1,keepdims=True))
+  return exp_z/np.sum(exp_z, axis=1, keepdims=True)
+def forward_propagation(X,weights,biases):
+  #let us calculate the output with our initialized weights and biases
+  z=np.dot(X,weights)+biases
+  output=softmax(z)
+  return output
+output=forward_propagation(X_train[:5],weights,biases)
+output
+#we have to calculate our loss 
+#we have to convert to one hot encoding our classes 
+def one_hot_encode(y,num_classes):
+  one_hot=np.zeros((y.size,num_classes))
+  one_hot[np.arange(y.size),y]=1
+  return one_hot
+def compute_loss(y_true,y_pred):
+  #total number of samples
+  #we are using cross entropy loss
+  m=y_true.shape[0]
+  loss = -np.sum(y_true * np.log(y_pred + 1e-9)) / m 
+  return loss
+
+#convert y_train to one hot encoding 
+y_train_one_hot=one_hot_encode(y_train,output_size)
+initial_loss=compute_loss(y_train_one_hot[:5],output)
+initial_loss
+
+#we now do backward propagation 
+#we will adjust our weight to reduce loss using gradient descent
+def backward_propagation(X,y_true,y_pred,weights,biases,learning_rate):
+  m=X.shape[0]
+  error=y_pred-y_true
+  dw=np.dot(X.T,error)/m
+  db = np.sum(error, axis=0, keepdims=True) / m
+  #we now update weights and biases according to the gradient descent
+  weights -= learning_rate * dw
+  biases -= learning_rate * db
+  return weights,biases
+
+learning_rate=0.01
+weights,biases=backward_propagation(X_train[:5],y_train_one_hot[:5],output,weights,biases,learning_rate)
+weights,biases
+
+
+def train_model(X_train,y_train,weights,biases,learning_rate,epochs):
+  for i in range(epochs):
+    y_pred=forward_propagation(X_train,weights,biases)
+    loss=compute_loss(y_train,y_pred)
+    weights,biases=backward_propagation(X_train,y_train,y_pred,weights,biases,learning_rate)
+  return weights,biases
+weights,biases=train_model(X_train,y_train_one_hot,weights,biases,learning_rate=0.01,epochs=2000)
+
+
+def predictions(X,weights,biases):
+  y_pred=forward_propagation(X,weights,biases)
+  return np.argmax(y_pred,axis=1)
+y_pred_test=predictions(X_test,weights,biases)
+accuracy = np.mean(y_pred_test == y_test) * 100
+accuracy
