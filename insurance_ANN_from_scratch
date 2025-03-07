@@ -1,0 +1,66 @@
+import pandas as pd
+
+df=pd.read_csv("/content/insurance_data.csv")
+df.head(10)
+
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
+
+X=df[["age","affordibility"]].values
+y=df["bought_insurance"].values
+
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.3,random_state=42,shuffle=True)
+y_train = y_train.reshape(-1, 1)
+y_test = y_test.reshape(-1, 1)
+
+np.random.seed(42)
+input_size=2
+output_size=1
+weights=np.random.randn(input_size,output_size)*0.01
+biases=np.zeros((1,output_size))
+
+
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))  
+
+def forward_propagation(X,weights,biases):
+  z=np.dot(X,weights)+biases
+  outcome=sigmoid(z)
+  return outcome
+
+def mean_squared_error(y_true,y_pred):
+  m=y_true.shape[0]
+  loss=np.square(y_pred-y_true)/m
+  return loss
+
+def backward_propagation(X,y_true,y_pred,weights,biases,learning_rate):
+  m=X.shape[0]
+  error=y_pred-y_true
+  dw=np.dot(X.T,error)/m
+  db=np.sum(error,axis=0,keepdims=True)/m
+  weights-=learning_rate*dw
+  biases-=learning_rate*db
+  return weights,biases
+
+def train_model(X_train,y_train,weights,biases,learning_rate,epochs):
+  for i in range(epochs):
+    y_pred=forward_propagation(X_train,weights,biases)
+    loss=mean_squared_error(y_train,y_pred)
+    weights,biases=backward_propagation(X_train,y_train,y_pred,weights,biases,learning_rate)
+    if i%100==0:
+      print(f"Epoch ::{i} Loss ::{loss}")
+  return weights,biases
+
+
+learning_rate=0.01
+weights,biases=train_model(X_train,y_train,weights,biases,learning_rate,epochs=15000)
+
+def make_predictions(X,weights,biases):
+  y_pred=forward_propagation(X,weights,biases)
+  predictions = (y_pred >= 0.5).astype(int)  
+  return predictions
+
+predictions=make_predictions(X_test,weights,biases)
+accuracy=np.mean(predictions==y_test)*100
+print("Accuracy ::",accuracy)
