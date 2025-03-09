@@ -1,0 +1,77 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+import tensorflow as tf
+from tensorflow import keras 
+
+import warnings 
+warnings.filterwarnings("ignore")
+df=pd.read_csv("/content/sonar_dataset.csv",header=None)
+df.head(5)
+
+df.shape
+
+df.columns
+
+df[60].value_counts()
+
+X=df.drop(60,axis=1)
+y=df[60]
+
+#we use one hot encoding 
+y1=pd.get_dummies(y,drop_first=True)
+y=y1.astype(int)
+y.head(5)
+
+y.value_counts()
+
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25,random_state=42)
+
+model=keras.Sequential([
+    keras.layers.Dense(60,input_dim=60,activation="relu"),
+    keras.layers.Dense(30,activation="relu"),
+    keras.layers.Dense(15,activation="relu"),
+    keras.layers.Dense(1,activation="sigmoid"),
+])
+model.compile(
+    optimizer="adam",
+    loss="binary_crossentropy",
+    metrics=["accuracy"]
+)
+
+
+model.fit(X_train,y_train,epochs=100,batch_size=8)
+
+model.evaluate(X_test,y_test)
+
+y_pred=model.predict(X_test).reshape(-1)
+y_pred=np.round(y_pred)
+
+from sklearn.metrics import classification_report,confusion_matrix
+print(classification_report(y_test,y_pred))
+
+#since we noticed over fitting of our model we use Dropout regularization where we drop some layers
+model_dropped=keras.Sequential([
+    keras.layers.Dense(60,input_dim=60,activation="relu"),
+    keras.layers.Dropout(0.4),
+    keras.layers.Dense(30,activation="relu"),
+    keras.layers.Dropout(0.4),
+    keras.layers.Dense(15,activation="relu"),
+    keras.layers.Dropout(0.4),
+    keras.layers.Dense(1,activation="sigmoid"),
+])
+model_dropped.compile(
+    optimizer="adam",
+    loss="binary_crossentropy",
+    metrics=["accuracy"]
+)
+model_dropped.fit(X_train,y_train,epochs=100,batch_size=8)
+
+model.evaluate(X_test,y_test)
+
+y_pred=model_dropped.predict(X_test).reshape(-1)
+y_pred=np.round(y_pred)
+
+from sklearn.metrics import classification_report,confusion_matrix
+print(classification_report(y_test,y_pred))
