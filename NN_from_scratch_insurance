@@ -1,0 +1,74 @@
+import pandas as pd
+df=pd.read_csv("/content/insurance_data.csv")
+import numpy as np
+from sklearn.model_selection import train_test_split
+
+df.head(5)
+
+X=df[["age"]].values
+y=df["bought_insurance"].values.reshape(-1,1)
+
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler()
+X = scaler.fit_transform(X)
+
+
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=42)
+
+np.random.seed(42)
+weights=np.random.randn(1,1)*0.01
+biases=np.zeros((1,1))
+
+def sigmoid(z):
+  return 1/(1+np.exp(-z))
+
+def forward_propagation(X,weights,biases):
+  z=np.dot(X,weights)+biases
+  return sigmoid(z)
+
+def compute_loss(y_true,y_pred):
+  epsilon=1e-15
+  y_pred=np.clip(y_pred,epsilon,1-epsilon)
+  return -np.mean(y_true*np.log(y_pred)+(1-y_pred)*np.log(1-y_pred))
+
+def backward_propagation(X,y_true,y_pred,weights,biases,learning_rate):
+  m=X.shape[0]
+  error=y_pred-y_true
+  dw=np.dot(X.T,error)/m
+  db=np.sum(error)/m
+  weights-=learning_rate*dw
+  biases-=learning_rate*db
+  return weights,biases
+
+learning_rate=0.01
+def train_model(X_train,y_train,weights,biases,learning_rate,epochs=1000):
+  for epoch in range(1000):
+    y_pred=forward_propagation(X_train,weights,biases)
+    loss=compute_loss(y_train,y_pred)
+    weights,biases=backward_propagation(X_train,y_train,y_pred,weights,biases,learning_rate)
+    if epoch%1000==0:
+      print(f"Epoch  ::{epoch} Loss ::{loss}")
+  return weights,biases
+
+weights,biases=train_model(X_train,y_train,weights,biases,learning_rate,epochs=3000)
+
+def model_predict(X,weights,biases):
+  predictions=forward_propagation(X,weights,biases)
+  return (predictions>0.5).astype(int)
+
+y_test_predictions=model_predict(X_test,weights,biases)
+accuracy=np.mean(y_test==y_test_predictions)*100
+print("Accuracy ::",accuracy)
+
+
+age = np.array([[19]])
+age_scaled = scaler.transform(age)
+pred = forward_propagation(age_scaled, weights, biases)
+result = (pred > 0.5).astype(int)
+if result[0][0]==1:
+    print("Prediction: Bought Insurance")
+else:
+    print("Prediction: Did Not Buy Insurance")
+
+
+
