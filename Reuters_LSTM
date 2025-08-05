@@ -1,0 +1,127 @@
+import  tensorflow as tf
+from tensorflow.keras.datasets import reuters
+(X_train,y_train),(X_test, y_test)=reuters.load_data(num_words=10000)
+
+len(X_train)
+
+len(y_train)
+
+len(X_test)
+
+len(y_test)
+
+#number of classes
+len(set(y_train))
+
+# decode the article to words
+word_index=reuters.get_word_index()
+
+reverse_word_index={value:key for (key,value) in word_index.items()}
+decoded_article="".join([reverse_word_index.get(i-3,'?') for i in X_train[0]])
+print(decoded_article)
+
+import numpy as np
+num_words=10000
+def vectorize_sequences(sequences,dimension=num_words):
+  results=np.zeros((len(sequences),dimension))
+  for i,sequence in enumerate(sequences):
+    results[i, sequence] = 1.0
+  return results
+X_train_vec=vectorize_sequences(X_train)
+X_test_vec=vectorize_sequences(X_test)
+print(X_train_vec)
+
+from tensorflow.keras.utils import to_categorical
+y_train_vec=to_categorical(y_train)
+y_test_vec=to_categorical(y_test)
+print(y_train_vec.shape)
+print(y_test_vec.shape)
+
+from tensorflow import keras
+
+
+model=keras.Sequential([
+    keras.layers.Dense(64,activation='relu'),
+    keras.layers.Dense(64,activation='relu'),
+    keras.layers.Dense(46,activation="softmax")
+])
+model.compile(
+    optimizer="rmsprop",
+    loss="categorical_crossentropy",
+    metrics=["accuracy"]
+)
+
+history=model.fit(
+    X_train_vec,y_train_vec,
+    epochs=20,
+    batch_size=512,
+    validation_split=0.2,
+    verbose=1
+)
+
+model.evaluate(X_test_vec,y_test_vec)
+
+import matplotlib.pyplot as plt
+acc=history.history['accuracy']
+val_acc=history.history['val_accuracy']
+plt.figure(figsize=(10,7))
+plt.plot(acc,label='Training Accuracy')
+plt.plot(val_acc,label='Validation Accuracy')
+plt.legend()
+plt.show()
+
+# Extract loss values
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+# Plot
+plt.figure(figsize=(8, 5))
+plt.plot(loss, label='Training Loss')
+plt.plot(val_loss, label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+max_length = 200  # We will truncate articles to 200 words
+
+X_train_pad = pad_sequences(X_train, maxlen=max_length)
+X_test_pad = pad_sequences(X_test, maxlen=max_length)
+
+print("Padded shape:", X_train_pad.shape)
+
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+
+vocab_size = 10000
+embedding_dim = 128
+
+model_lstm = Sequential()
+model_lstm.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_length))
+model_lstm.add(LSTM(128))  # 128 LSTM units
+model_lstm.add(Dense(46, activation='softmax'))
+
+model_lstm.compile(optimizer='adam',
+                   loss='categorical_crossentropy',
+                   metrics=['accuracy'])
+
+model_lstm.summary()
+
+
+history_lstm = model_lstm.fit(
+    X_train_pad, y_train_vec,
+    epochs=10,
+    batch_size=128,
+    validation_split=0.2,
+    verbose=1
+)
+
+
+
+results_lstm = model_lstm.evaluate(X_test_pad, y_test_vec)
+print("Test Loss, Test Accuracy:", results_lstm)
