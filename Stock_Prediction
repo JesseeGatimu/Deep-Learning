@@ -1,0 +1,64 @@
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras import layers
+from tensorflow.keras.layers import Dense,LSTM,Dropout
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+
+
+
+df=yf.download("AAPL",start="2014-01-01",end="2018-01-01")
+df.head(5)
+
+features=["Close","High","Low","Open","Volume"]
+df=df[features]
+
+scaler=MinMaxScaler(feature_range=(0,1))
+scaled_data=scaler.fit_transform(df)
+
+sequence_length=60
+X=[]
+y=[]
+for i in range(sequence_length,len(scaled_data)):
+  X.append(scaled_data[i-sequence_length:i])
+  y.append(scaled_data[i,3])
+X=np.array(X)
+y=np.array(y)
+
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test=train_test_split(X,y,random_state=42,test_size=0.2)
+
+model=Sequential()
+model.add(LSTM(50,return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(20))
+model.add(Dropout(0.2))
+model.add(Dense(1))
+
+model.compile(
+    optimizer="adam",
+    loss="mse",
+    metrics=["mae"]
+)
+
+model.fit(X_train,y_train,epochs=20,batch_size=32)
+
+predicted_prices=model.predict(X_test)
+
+scaled_close_index = features.index('Close')
+scale_close = scaler.scale_[scaled_close_index]
+min_close = scaler.min_[scaled_close_index]
+predicted_prices_original = predicted_prices / scale_close - min_close
+y_test_original = y_test / scale_close - min_close
+
+import matplotlib.pyplot as plt
+plt.figure(figsize=(12,6))
+plt.plot(y_test_original, label='Actual Close Price')
+plt.plot(predicted_prices_original, label='Predicted Close Price')
+plt.title('Stock Price Prediction (Apple)')
+plt.xlabel('Time')
+plt.ylabel('Price (USD)')
+plt.legend()
+plt.show()
